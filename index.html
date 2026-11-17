@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101722">
+<meta name="description" content="ファイル名の先頭番号だけを連番に整理。タイトルはそのまま。GitHub Pagesで使える無料のローカル処理ツール。">
+<title>Number Tidy | ファイル名の番号整理</title>
+<style>
+  :root{color-scheme:dark;--bg:#0d1420;--surface:#151f2c;--surface2:#1a2736;--line:#304052;--text:#edf2f8;--muted:#9aaabd;--mint:#85e1c2;--blue:#9dc2ff;--amber:#ffcc87;--danger:#ff99a1;--shadow:0 20px 60px #0309104d}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 60% 33% at 86% 0%,#18314b 0%,transparent 90%),var(--bg);color:var(--text);font:15px/1.6 system-ui,-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif}
+  button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+  .wrap{width:min(1120px,calc(100% - 40px));margin:auto}.topbar{border-bottom:1px solid #ffffff10}.topinner{display:flex;align-items:center;justify-content:space-between;min-height:70px;gap:16px}
+  .brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:750;letter-spacing:.01em}.brandmark{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:#86e3c8;color:#10212a;font-size:18px;font-weight:900}.topnote{color:var(--muted);font-size:12px}
+  .hero{padding:63px 0 35px}.eyebrow{display:inline-flex;align-items:center;gap:9px;color:var(--mint);font-size:12px;font-weight:750;letter-spacing:.09em;text-transform:uppercase}.eyebrow:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 12px #85e1c284}
+  h1{font-size:clamp(32px,5vw,56px);line-height:1.25;letter-spacing:-.05em;margin:15px 0 17px;font-weight:800}.hero p{color:var(--muted);font-size:16px;max-width:770px;margin:0}.accent{color:var(--mint)}
+  .demo{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;margin:30px 0 0}.example{background:#131e2b;border:1px solid var(--line);border-radius:16px;padding:18px 20px;min-width:0}.example h2{margin:0 0 10px;font-size:12px;color:var(--muted);font-weight:700}.example pre{margin:0;font:600 14px/1.95 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}.example.after pre{color:var(--mint)}.arrow{color:var(--mint);font-size:27px}
+  .workarea{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(290px,.8fr);gap:20px;align-items:stretch;margin-top:25px}.panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow);min-width:0}.panel h2{font-size:19px;line-height:1.3;margin:0 0 17px;letter-spacing:-.02em}.panel-head{display:flex;gap:10px;align-items:center;justify-content:space-between}
+  .dropzone{position:relative;border:2px dashed #45596b;border-radius:17px;min-height:224px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px 14px;transition:.15s ease;background:#192638;color:#a4b6c8}.dropzone.dragover{border-color:var(--mint);background:#173d3b}.foldericon{width:58px;height:58px;border-radius:17px;background:#2b4d52;display:grid;place-items:center;color:var(--mint);font-size:26px;margin-bottom:9px}.dropzone strong{color:var(--text);font-size:17px}.hint{color:var(--muted);font-size:12px;margin:4px 0 0}
+  .actions{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#26374a;color:var(--text);border-radius:11px;padding:10px 16px;font-size:13px;font-weight:700;min-height:43px}.btn:hover:not(:disabled){background:#34495d}.btn-main{color:#10251e;background:var(--mint);border-color:var(--mint)}.btn-main:hover:not(:disabled){background:#a0efd5}.btn-ghost{background:transparent}.btn-download{color:#10251e;background:var(--mint);border-color:var(--mint);padding:13px 18px;font-size:14px}.btn-download:hover:not(:disabled){background:#a4efd9}
+  .field{margin:14px 0}.field-label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}.field-note{display:block;color:var(--muted);font-size:12px;margin-top:5px}.control{width:100%;background:#0e1824;border:1px solid #405166;border-radius:10px;color:var(--text);padding:10px 12px;min-height:44px;outline:none}.control:focus{border-color:var(--mint);box-shadow:0 0 0 3px #85e1c21e}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .checkrow{display:flex;gap:11px;align-items:flex-start;margin-top:19px;cursor:pointer;font-size:13px}.checkrow input{width:18px;height:18px;accent-color:var(--mint);margin-top:2px;flex:none}.checkrow small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+  .privacy{border-radius:12px;background:#203b3b;border:1px solid #365a55;padding:13px 14px;margin-top:21px;color:#c8f5e7;font-size:12px}.privacy strong{font-weight:800}
+  .result{margin:20px 0 60px}.result-header{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:15px}.result h2{font-size:20px;letter-spacing:-.03em;margin:0 0 4px}.summary{color:var(--muted);font-size:13px;margin:0}.statline{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.stat strong{color:var(--text);font-size:22px;margin-right:4px;font-variant-numeric:tabular-nums}.stat{color:var(--muted);font-size:12px}
+  .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:13px}.tabs{display:flex;gap:5px;flex-wrap:wrap}.tab{border:1px solid transparent;border-radius:9px;color:var(--muted);background:transparent;font-size:12px;font-weight:700;padding:7px 11px}.tab.active{background:#294138;border-color:#41705c;color:var(--mint)}.search{background:#0e1824;border:1px solid var(--line);border-radius:10px;padding:8px 11px;color:var(--text);width:min(230px,100%);outline:none;font-size:13px}.search:focus{border-color:var(--mint)}
+  .table-shell{overflow:auto;border:1px solid var(--line);border-radius:14px;background:#101b27;max-height:620px}table{width:100%;border-collapse:collapse;min-width:610px;font-size:13px}th{position:sticky;top:0;background:#233245;z-index:1;color:#b2c3d5;text-align:left;font-weight:650;font-size:12px;padding:12px 16px}td{padding:11px 16px;border-top:1px solid #2c3a4b;vertical-align:middle;overflow-wrap:anywhere}.row-old{color:#b3c0cb}.row-new{font-weight:700;color:var(--mint)}.row-new.same{font-weight:450;color:#c6d1dc}.path{display:block;font-size:10px;color:#7e94a8;margin-top:2px}.pill{display:inline-flex;white-space:nowrap;border-radius:999px;padding:3px 8px;font-size:11px;background:#1b4640;color:var(--mint)}.pill.same{background:#2a3b4a;color:#aab9c9}.pill.skip{background:#4b3b28;color:#f1c98a}.empty{padding:28px;color:var(--muted);text-align:center}
+  .footline{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-top:18px}.notice{font-size:12px;color:var(--muted);margin:0;max-width:700px}.notice.error{color:var(--danger)}.progress-wrap{display:none;margin-top:14px}.progress-wrap.visible{display:block}progress{width:100%;height:8px;accent-color:var(--mint)}.progress-label{font-size:12px;color:var(--muted);margin-top:3px}.footer{border-top:1px solid #263342;color:var(--muted);padding:26px 0 45px;font-size:12px}
+  [hidden]{display:none!important}
+  @media (max-width:760px){.hero{padding-top:40px}.workarea{grid-template-columns:1fr}.demo{grid-template-columns:1fr;gap:10px}.demo .arrow{transform:rotate(90deg);text-align:center;font-size:22px}.panel{padding:19px}.wrap{width:min(100% - 26px,1120px)}.topnote{display:none}.result{margin-top:20px}}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.dropzone{transition:none}}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap topinner"><div class="brand"><div class="brandmark" aria-hidden="true">#</div>Number Tidy</div><div class="topnote">名前を整える、シンプルな道具。</div></div></header>
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">FILE NUMBER ORGANIZER</div>
+    <h1>先頭の番号だけ、<br><span class="accent">きれいな連番に。</span></h1>
+    <p>「1_1、1_2、2、3...」のように並んだファイルを「1、2、3、4...」へ。<strong style="color:#e1eaf3">タイトルも拡張子も変更せず</strong>、番号だけを振り直します。</p>
+    <div class="demo" aria-label="変更例">
+      <div class="example"><h2>BEFORE / 変更前</h2><pre>1_1 朝の音楽.mp3
+1_2 夜の音楽.mp3
+2 お気に入り.mp3
+3 ライブ音源.mp3</pre></div>
+      <span class="arrow" aria-hidden="true">➜</span>
+      <div class="example after"><h2>AFTER / 変更後</h2><pre>1 朝の音楽.mp3
+2 夜の音楽.mp3
+3 お気に入り.mp3
+4 ライブ音源.mp3</pre></div>
+    </div>
+  </section>
+  <section class="workarea" aria-label="番号整理ツール">
+    <div class="panel"><h2>1. 整理するファイルを選ぶ</h2>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="ファイルをドラッグ＆ドロップ、またはクリックして選択">
+        <div class="foldericon" aria-hidden="true">⇧</div>
+        <strong>ここにファイルやフォルダをドロップ</strong>
+        <div class="hint">音楽・画像・文書など、種類は問いません</div>
+        <div class="actions"><button type="button" class="btn btn-main" id="choose-files">ファイルを選択</button><button type="button" class="btn" id="choose-folder">フォルダを選択</button></div>
+      </div>
+      <input type="file" id="file-input" multiple hidden>
+      <input type="file" id="folder-input" multiple webkitdirectory directory hidden>
+      <div class="privacy"><strong>🔒 ファイルは外部に送信しません。</strong><br>このページを開いているブラウザ内だけで処理します。元ファイルも変更しません。</div>
+    </div>
+    <div class="panel"><h2>2. 連番の設定</h2>
+      <div class="twocol">
+        <div class="field"><label class="field-label" for="start-number">開始番号</label><input type="number" inputmode="numeric" id="start-number" class="control" min="0" max="999999999" step="1" value="1"></div>
+        <div class="field"><label class="field-label" for="digit-width">番号の桁数</label><select id="digit-width" class="control"><option value="0">指定なし（1, 2, 3）</option><option value="2">2桁（01, 02...）</option><option value="3">3桁（001, 002...）</option><option value="4">4桁（0001, 0002...）</option></select></div>
+      </div>
+      <label class="checkrow" for="per-folder"><input type="checkbox" id="per-folder" checked><span>フォルダごとに連番を振り直す<small>サブフォルダを別々に「1」から整理します。OFFなら全体を通し番号にします。</small></span></label>
+      <div class="field" style="margin-top:20px"><span class="field-label">対象にする番号の例</span><div class="hint">1、01、1_2、1-2、1.2、１_２（全角数字にも対応）</div></div>
+      <div class="field"><span class="field-label">並べ替えルール</span><div class="hint">タイトルを無視して先頭番号を数値順に並べ、1から振り直します。番号のないファイルはそのまま残します。</div></div>
+    </div>
+  </section>
+  <section class="panel result" aria-label="変更プレビュー">
+    <div class="result-header"><div><h2>3. 変更内容を確認</h2><p class="summary" id="summary">ファイルを選択すると、ここにプレビューが表示されます。</p></div><div class="statline" aria-live="polite"><span class="stat"><strong id="stat-total">0</strong>件</span><span class="stat"><strong id="stat-changed">0</strong>件変更</span><span class="stat"><strong id="stat-skipped">0</strong>件対象外</span></div></div>
+    <div class="toolbar"><div class="tabs" role="group" aria-label="表示するファイル"><button class="tab active" data-filter="all" type="button">すべて</button><button class="tab" data-filter="changed" type="button">変更のみ</button><button class="tab" data-filter="skipped" type="button">番号なし</button></div><input class="search" id="search" aria-label="ファイル名検索" placeholder="ファイル名で検索"></div>
+    <div class="table-shell"><table><thead><tr><th style="width:45%">変更前</th><th style="width:45%">変更後</th><th>状態</th></tr></thead><tbody id="preview"><tr><td class="empty" colspan="3">ファイルがまだ選択されていません。</td></tr></tbody></table></div>
+    <div class="footline"><p class="notice" id="notice">※ ダウンロードはZIP形式です。ZIPを解凍すると整理済みのファイル名になります。</p><button type="button" class="btn btn-download" id="download" disabled>整理したZIPをダウンロード ↓</button></div>
+    <div class="progress-wrap" id="progress-wrap" aria-live="polite"><progress max="100" value="0" id="progress"></progress><div class="progress-label" id="progress-label">準備中...</div></div>
+  </section>
+</main>
+<footer class="footer"><div class="wrap">Number Tidy · 無料 / サーバー不要 / GitHub Pages 対応　　※ ZIP内のファイルデータは再エンコードしません。</div></footer>
+<script>
+'use strict';
+(() => {
+  const $ = id => document.getElementById(id);
+  const els = {
+    file: $('file-input'), folder: $('folder-input'), drop: $('dropzone'),
+    start: $('start-number'), digits: $('digit-width'), perFolder: $('per-folder'),
+    preview: $('preview'), search: $('search'), summary: $('summary'),
+    total: $('stat-total'), changed: $('stat-changed'), skipped: $('stat-skipped'),
+    notice: $('notice'), download: $('download'), progressWrap: $('progress-wrap'),
+    progress: $('progress'), progressLabel: $('progress-label')
+  };
+  let selected = [];
+  let planned = [];
+  let activeFilter = 'all';
+  let processing = false;
+  const pathCollator = new Intl.Collator('ja', {numeric: true, sensitivity:'base'});
+
+  function normalizedPath(raw) {
+    // ファイルシステムや ZIP から見て安全な相対パスだけを使う。
+    return String(raw).replaceAll('\\','/').split('/').filter(p => p && p !== '.' && p !== '..').join('/');
+  }
+  function asAscii(s) { return s.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFF10 + 48)); }
+  function leadingNumber(name) {
+    // 最初の数字群 + 数字で続く区切り記号だけを番号とみなす。
+    // 例: 1_2_曲.mp3 → prefix 1_2, suffix _曲.mp3
+    const match = /^([0-9０-９]+(?:[_.．＿\-－][0-9０-９]+)*)(.*)$/u.exec(name);
+    if (!match) return null;
+    return {prefix:match[1], suffix:match[2], segments:asAscii(match[1]).split(/[_.．＿\-－]/).map(s=>BigInt(s))};
+  }
+  function compareNumberParts(a,b) {
+    for(let k=0;k<Math.min(a.length,b.length);k++){
+      if(a[k]<b[k])return -1;
+      if(a[k]>b[k])return 1;
+    }
+    return a.length-b.length;
+  }
+  function dirOf(p) { const i=p.lastIndexOf('/'); return i<0?'':p.slice(0,i); }
+  function fileOf(p) { const i=p.lastIndexOf('/'); return p.slice(i+1); }
+  function combine(dir,name) { return dir ? `${dir}/${name}` : name; }
+  function textCell(row,value,cls,path) {
+    const td=document.createElement('td');
+    const span=document.createElement('span'); span.textContent=value; if(cls)span.className=cls;
+    td.appendChild(span);
+    if(path) {const sub=document.createElement('span');sub.className='path';sub.textContent=path;td.appendChild(sub)}
+    row.appendChild(td);
+  }
+  function rebuild() {
+    const rawStart=Number(els.start.value);
+    const start=Number.isSafeInteger(rawStart) && rawStart>=0 && rawStart<=999999999 ? rawStart : 1;
+    const width=Number(els.digits.value);
+    const separate=els.perFolder.checked;
+    const entries=selected.map((item,index)=>{
+      const path=item.path, dir=dirOf(path), name=fileOf(path);
+      return {...item,index,dir,name,parsed:leadingNumber(name),newPath:path,status:'skipped'};
+    });
+    const candidates=entries.filter(e=>e.parsed);
+    candidates.sort((a,b)=> {
+      if(separate && a.dir!==b.dir) return pathCollator.compare(a.dir,b.dir);
+      const n=compareNumberParts(a.parsed.segments,b.parsed.segments);
+      return n || a.index-b.index;
+    });
+    let group=null, count=0;
+    for(const item of candidates){
+      const key=separate?item.dir:'__all__';
+      if(key!==group){group=key;count=0;}
+      const n=String(start+count).padStart(width,'0'); count++;
+      item.newPath=combine(item.dir,n+item.parsed.suffix);
+      item.status=item.newPath===item.path?'same':'changed';
+    }
+    const untouched=entries.filter(e=>!e.parsed).sort((a,b)=>pathCollator.compare(a.path,b.path));
+    planned=[...candidates,...untouched];
+    const changed=planned.filter(e=>e.status==='changed').length;
+    const skipped=untouched.length;
+    els.total.textContent=String(planned.length);
+    els.changed.textContent=String(changed);
+    els.skipped.textContent=String(skipped);
+    els.summary.textContent=planned.length?`${candidates.length}件に連番を設定。番号の後ろの文字列とファイル内容はそのままです。`:'ファイルを選択すると、ここにプレビューが表示されます。';
+    const collision=detectCollisions(planned);
+    const tooMany=planned.length>65535;
+    const tooLarge=planned.some(e=>e.file.size>0xFFFFFFFF);
+    let warning='';
+    if(collision.length) warning=`保存先の名前が重複しています: ${collision.slice(0,3).join(' / ')}${collision.length>3?' ほか':''}。選択するファイルや設定を変更してください。`;
+    else if(tooMany)warning='ZIP形式の制約により、65,535件を超えるファイルはまとめられません。';
+    else if(tooLarge)warning='4GB以上の単一ファイルは、このバージョンのZIP作成に対応していません。';
+    els.notice.className='notice'+(warning?' error':'');
+    els.notice.textContent=warning||'※ ダウンロードはZIP形式です。ZIPを解凍すると整理済みのファイル名になります。';
+    els.download.disabled=!planned.length || Boolean(warning) || processing;
+    render();
+  }
+  function detectCollisions(items){
+    const seen=new Set(), dupes=[];
+    for(const e of items){const name=e.newPath.normalize('NFC').toLowerCase();if(seen.has(name))dupes.push(e.newPath);seen.add(name)}
+    return dupes;
+  }
+  function render(){
+    const query=els.search.value.toLocaleLowerCase('ja');
+    const rows=planned.filter(e=>(activeFilter==='all'||e.status===activeFilter||(activeFilter==='changed'&&e.status==='changed')) && (!query||e.path.toLocaleLowerCase('ja').includes(query)||e.newPath.toLocaleLowerCase('ja').includes(query)));
+    els.preview.replaceChildren();
+    if(rows.length===0){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=3;td.className='empty';td.textContent=planned.length?'表示条件に一致するファイルがありません。':'ファイルがまだ選択されていません。';tr.appendChild(td);els.preview.appendChild(tr);return;}
+    const max=350;
+    for(const e of rows.slice(0,max)){
+      const tr=document.createElement('tr');
+      textCell(tr,e.name,'row-old',e.dir);
+      textCell(tr,fileOf(e.newPath),'row-new'+(e.status==='changed'?'':' same'),dirOf(e.newPath));
+      const td=document.createElement('td'), tag=document.createElement('span');
+      tag.className='pill'+(e.status==='skipped'?' skip':e.status==='same'?' same':'');
+      tag.textContent=e.status==='changed'?'変更':e.status==='same'?'変更なし':'番号なし';
+      td.appendChild(tag);tr.appendChild(td);els.preview.appendChild(tr);
+    }
+    if(rows.length>max){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=3;td.className='empty';td.textContent=`最初の${max}件を表示中（残り${rows.length-max}件もZIPには含まれます）`;tr.appendChild(td);els.preview.appendChild(tr)}
+  }
+  function chooseFiles(files, prefix=''){
+    if(processing)return;
+    const next=Array.from(files).filter(f=>f instanceof File).map(file=>({file,path:normalizedPath(file.webkitRelativePath || combine(prefix,file.name))})).filter(e=>e.path);
+    if(!next.length){els.notice.className='notice error';els.notice.textContent='選択した場所にファイルが見つかりませんでした。';return;}
+    selected=next;
+    els.search.value='';
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.filter==='all'));
+    activeFilter='all';
+    rebuild();
+  }
+  $('choose-files').addEventListener('click',e=>{e.stopPropagation();els.file.click()});
+  $('choose-folder').addEventListener('click',e=>{e.stopPropagation();els.folder.click()});
+  els.drop.addEventListener('click',()=>els.file.click());
+  els.drop.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target===els.drop){e.preventDefault();els.file.click()}});
+  els.file.addEventListener('change',()=>{chooseFiles(els.file.files);els.file.value=''});
+  els.folder.addEventListener('change',()=>{chooseFiles(els.folder.files);els.folder.value=''});
+  for(const eventName of ['dragenter','dragover'])els.drop.addEventListener(eventName,e=>{e.preventDefault();els.drop.classList.add('dragover')});
+  for(const eventName of ['dragleave','drop'])els.drop.addEventListener(eventName,e=>{e.preventDefault();els.drop.classList.remove('dragover')});
+  function getEntries(reader) { return new Promise((resolve,reject)=>reader.readEntries(resolve,reject)); }
+  function entryToFile(entry) {return new Promise((resolve,reject)=>entry.file(resolve,reject));}
+  async function walk(entry, prefix=''){
+    const current=combine(prefix,entry.name);
+    if(entry.isFile){const file=await entryToFile(entry);return [{file,path:normalizedPath(current)}]}
+    if(!entry.isDirectory)return [];
+    const reader=entry.createReader();let all=[];
+    while(true){const batch=await getEntries(reader);if(!batch.length)break;all.push(...batch)}
+    const nested=await Promise.all(all.map(e=>walk(e,current)));
+    return nested.flat();
+  }
+  els.drop.addEventListener('drop',async e=>{
+    if(processing)return;
+    const items=Array.from(e.dataTransfer?.items||[]);
+    try{
+      const rootEntries=items.map(i=>i.webkitGetAsEntry?.()).filter(Boolean);
+      if(rootEntries.length){
+        const lists=await Promise.all(rootEntries.map(entry=>walk(entry)));
+        const next=lists.flat();
+        if(next.length){selected=next;els.search.value='';activeFilter='all';document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.filter==='all'));rebuild();return;}
+      }
+      chooseFiles(e.dataTransfer.files);
+    }catch(err){console.error(err);els.notice.className='notice error';els.notice.textContent='フォルダを読み取れませんでした。選択ボタンからお試しください。'}
+  });
+  for(const item of [els.start,els.digits,els.perFolder])item.addEventListener('change',rebuild);
+  els.start.addEventListener('input',rebuild);
+  els.search.addEventListener('input',render);
+  document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{
+    activeFilter=tab.dataset.filter;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===tab));
+    render();
+  }));
+
+  // 非圧縮ZIPをブラウザだけで作る。音声・画像の再圧縮や変換はしない。
+  const encoder=new TextEncoder();
+  const crcTable=(()=>{const t=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[i]=c>>>0;}return t})();
+  async function crc32(file){
+    let c=0xFFFFFFFF;
+    const block=2*1024*1024;
+    for(let offset=0;offset<file.size;offset+=block){
+      const arr=new Uint8Array(await file.slice(offset,offset+block).arrayBuffer());
+      for(let i=0;i<arr.length;i++)c=crcTable[(c^arr[i])&255]^(c>>>8);
+    }
+    return (c^0xFFFFFFFF)>>>0;
+  }
+  function dosTimeStamp(ms){
+    const d=new Date(ms||Date.now()), y=Math.max(1980,Math.min(2107,d.getFullYear()));
+    return {time:(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1), date:((y-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate()};
+  }
+  function localHeader(name,size,crc,stamp){
+    const out=new Uint8Array(30+name.length),v=new DataView(out.buffer);
+    v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x800,true);
+    v.setUint16(8,0,true);v.setUint16(10,stamp.time,true);v.setUint16(12,stamp.date,true);
+    v.setUint32(14,crc,true);v.setUint32(18,size,true);v.setUint32(22,size,true);
+    v.setUint16(26,name.length,true);v.setUint16(28,0,true);out.set(name,30);return out;
+  }
+  function centralHeader(name,size,crc,stamp,offset){
+    const out=new Uint8Array(46+name.length),v=new DataView(out.buffer);
+    v.setUint32(0,0x02014b50,true);v.setUint16(4,20,true);v.setUint16(6,20,true);
+    v.setUint16(8,0x800,true);v.setUint16(10,0,true);v.setUint16(12,stamp.time,true);v.setUint16(14,stamp.date,true);
+    v.setUint32(16,crc,true);v.setUint32(20,size,true);v.setUint32(24,size,true);v.setUint16(28,name.length,true);
+    v.setUint16(30,0,true);v.setUint16(32,0,true);v.setUint16(34,0,true);v.setUint16(36,0,true);
+    v.setUint32(38,0,true);v.setUint32(42,offset,true);out.set(name,46);return out;
+  }
+  function endHeader(count,centralSize,centralOffset){
+    const out=new Uint8Array(22),v=new DataView(out.buffer);
+    v.setUint32(0,0x06054b50,true);v.setUint16(4,0,true);v.setUint16(6,0,true);
+    v.setUint16(8,count,true);v.setUint16(10,count,true);v.setUint32(12,centralSize,true);
+    v.setUint32(16,centralOffset,true);v.setUint16(20,0,true);return out;
+  }
+  const MAX32=0xFFFFFFFF;
+  async function buildZip(entries,onProgress){
+    const contents=[],central=[];
+    let offset=0,centralSize=0;
+    for(let i=0;i<entries.length;i++){
+      const item=entries[i],file=item.file;
+      const name=encoder.encode(item.newPath);
+      if(name.length>65535)throw Error('ファイル名がZIPの制限を超えています: '+item.newPath);
+      if(file.size>MAX32)throw Error('4GB以上のファイルには対応していません。');
+      const stamp=dosTimeStamp(file.lastModified);
+      const crc=await crc32(file);
+      const local=localHeader(name,file.size,crc,stamp),center=centralHeader(name,file.size,crc,stamp,offset);
+      if(offset+local.length+file.size>MAX32)throw Error('ZIP全体が4GBを超えています。ファイルを分割して保存してください。');
+      contents.push(local,file);
+      central.push(center);centralSize+=center.length;
+      offset+=local.length+file.size;
+      onProgress(Math.round((i+1)/entries.length*100),i+1,entries.length);
+      if(i%6===0)await new Promise(resolve=>setTimeout(resolve,0));
+    }
+    if(offset+centralSize+22>MAX32)throw Error('ZIP全体が4GBを超えています。ファイルを分割して保存してください。');
+    return new Blob([...contents,...central,endHeader(entries.length,centralSize,offset)],{type:'application/zip'});
+  }
+  els.download.addEventListener('click',async()=>{
+    if(processing || !planned.length || detectCollisions(planned).length)return;
+    processing=true;els.download.disabled=true;els.progressWrap.classList.add('visible');
+    els.progress.value=0;els.progressLabel.textContent='ZIPの準備をしています...';
+    try{
+      const blob=await buildZip(planned,(percent,current,total)=>{
+        els.progress.value=percent;els.progressLabel.textContent=`${current} / ${total} ファイルを処理しました（${percent}%）`;
+      });
+      const now=new Date();const pad=x=>String(x).padStart(2,'0');
+      const stamp=`${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement('a');link.href=url;link.download=`number_tidy_${stamp}.zip`;
+      document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      els.progressLabel.textContent=`ZIPを作成しました（${planned.length}件）。保存が始まらない場合はブラウザのダウンロード設定を確認してください。`;
+    }catch(err){console.error(err);els.notice.className='notice error';els.notice.textContent='ZIP作成に失敗しました: '+(err?.message||String(err));els.progressLabel.textContent='処理を中断しました。'}
+    finally{processing=false;rebuild();}
+  });
+  rebuild();
+})();
+</script>
+</body>
+</html>

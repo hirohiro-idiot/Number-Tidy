@@ -78,10 +78,11 @@
     <div class="footline"><p class="notice" id="notice">※ ダウンロードはZIP形式です。ZIPを解凍すると整理済みのファイル名になります。</p><button type="button" class="btn btn-download" id="download" disabled>整理したZIPをダウンロード ↓</button></div>
     <div class="progress-wrap" id="progress-wrap" aria-live="polite"><progress max="100" value="0" id="progress"></progress><div class="progress-label" id="progress-label">準備中...</div></div>
   </section>
-<section class="panel" style="margin:20px 0" aria-label="音声末尾加工">
-<h2>音声の末尾加工</h2>
+<section class="panel" style="margin:20px 0" aria-label="音声の先頭・末尾加工">
+<h2>音声の先頭・末尾加工</h2>
 <p class="hint">番号整理とは独立した機能です。音声をブラウザ内で加工し、元ファイルは変更しません。出力はMP3または16-bit PCM WAV（元のタグ・ジャケットは保持しません）。</p>
 <div class="field"><label class="field-label" for="tail-files">音声ファイル（複数選択可）</label><input class="control" id="tail-files" type="file" accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg,.opus,.aac" multiple></div>
+<div class="field"><label class="field-label" for="tail-in">フェードイン（秒）</label><input class="control" id="tail-in" type="number" min="0" max="30" step="0.1" value="0.2"><span class="field-note">先頭を無音から自然に立ち上げます。0秒で無効。</span></div>
 <div class="twocol"><div class="field"><label class="field-label" for="tail-fade">フェードアウト（秒）</label><input class="control" id="tail-fade" type="number" min="0" max="30" step="0.1" value="1"></div><div class="field"><label class="field-label" for="tail-silence">追加無音（秒）</label><input class="control" id="tail-silence" type="number" min="0" max="30" step="0.1" value="0.5"></div></div>
 <div class="twocol"><div class="field"><label class="field-label" for="tail-format">出力形式</label><select class="control" id="tail-format"><option value="mp3">MP3（推奨）</option><option value="wav">WAV（非圧縮）</option></select></div><div class="field"><label class="field-label" for="tail-bitrate">MP3 音質</label><select class="control" id="tail-bitrate"><option value="128">128 kbps</option><option value="192" selected>192 kbps</option><option value="256">256 kbps</option><option value="320">320 kbps</option></select></div></div>
 <p class="hint">MP3は44.1kHzで再エンコードします。初回のMP3加工時のみ外部CDNから <a href="https://github.com/zhuker/lamejs" style="color:var(--mint)" target="_blank" rel="noopener noreferrer">lamejs 1.2.1 (LGPL-3.0)</a> を読み込みます。音声の送信は行いません。WAVは外部ライブラリ不要です。</p>
@@ -329,7 +330,14 @@
     finally{processing=false;rebuild();}
   });
 
-  function encodeTailWav(buffer,fade,silence){
+  // Half-cosine envelopes; overlapping fades multiply, never amplify.
+  function edgeGain(i,n,inCount,outCount){
+    const a=inCount&&i<inCount?(inCount===1?0:0.5*(1-Math.cos(Math.PI*i/(inCount-1)))):1;
+    const start=n-outCount;
+    const b=outCount&&i>=start?(outCount===1?0:0.5*(1+Math.cos(Math.PI*(i-start)/(outCount-1)))):1;
+    return a*b;
+  }
+  function encodeTailWav(buffer,fade,silence,fadeIn){
     const rate=buffer.sampleRate, channels=buffer.numberOfChannels, n=buffer.length;
     if(channels<1||channels>2)throw Error('モノラル・ステレオのみ対応しています。');
     const extra=Math.round(silence*rate), frames=n+extra, bytes=frames*channels*2;
@@ -341,9 +349,9 @@
     v.setUint32(24,rate,true);v.setUint32(28,rate*channels*2,true);v.setUint16(32,channels*2,true);v.setUint16(34,16,true);
     ascii(36,'data');v.setUint32(40,bytes,true);
     const data=Array.from({length:channels},(_,i)=>buffer.getChannelData(i));
-    const count=Math.min(n,Math.round(fade*rate)),start=n-count;
+    const count=Math.min(n,Math.round(fade*rate)),inCount=Math.min(n,Math.round(fadeIn*rate));
     for(let i=0;i<n;i++){
-      const gain=count&&i>=start?(count===1?0:0.5*(1+Math.cos(Math.PI*(i-start)/(count-1)))):1;
+      const gain=edgeGain(i,n,inCount,count);
       for(let c=0;c<channels;c++){
         const x=Math.max(-1,Math.min(1,data[c][i]*gain));
         v.setInt16(44+2*(i*channels+c),Math.round(x*(x<0?32768:32767)),true);
@@ -366,19 +374,19 @@
     }).catch(e=>{mp3Loading=null;throw e;});
     return mp3Loading;
   }
-  async function encodeTailMp3(buffer,fade,silence,bitrate,lame,onProgress){
+  async function encodeTailMp3(buffer,fade,silence,bitrate,lame,onProgress,fadeIn){
     const rate=buffer.sampleRate,n=buffer.length,channels=buffer.numberOfChannels;
     if(channels<1||channels>2)throw Error('モノラル・ステレオのみ対応しています。');
     if(rate!==44100)throw Error('MP3用のサンプルレート変換に失敗しました。');
     const encoder=new lame.Mp3Encoder(channels,rate,bitrate),parts=[];
-    const frames=n+Math.round(silence*rate),count=Math.min(n,Math.round(fade*rate)),start=n-count;
+    const frames=n+Math.round(silence*rate),count=Math.min(n,Math.round(fade*rate)),inCount=Math.min(n,Math.round(fadeIn*rate));
     const data=Array.from({length:channels},(_,c)=>buffer.getChannelData(c));
     for(let offset=0;offset<frames;offset+=1152){
       const len=Math.min(1152,frames-offset),pcm=Array.from({length:channels},()=>new Int16Array(len));
       for(let j=0;j<len;j++){
         const i=offset+j;
         if(i>=n)continue;
-        const gain=count&&i>=start?(count===1?0:0.5*(1+Math.cos(Math.PI*(i-start)/(count-1)))):1;
+        const gain=edgeGain(i,n,inCount,count);
         for(let c=0;c<channels;c++){
           const x=Math.max(-1,Math.min(1,data[c][i]*gain));pcm[c][j]=Math.round(x*(x<0?32768:32767));
         }
@@ -399,16 +407,16 @@
   }
   const tailFormat=$('tail-format'),tailBitrate=$('tail-bitrate');
   tailFormat.addEventListener('change',()=>{tailBitrate.disabled=tailFormat.value==='wav';});
-  const tailFiles=$('tail-files'),tailFade=$('tail-fade'),tailSilence=$('tail-silence'),tailRun=$('tail-run'),tailStatus=$('tail-status');
+  const tailFiles=$('tail-files'),tailIn=$('tail-in'),tailFade=$('tail-fade'),tailSilence=$('tail-silence'),tailRun=$('tail-run'),tailStatus=$('tail-status');
   tailRun.addEventListener('click',async()=>{
-    const files=Array.from(tailFiles.files||[]),fade=tailFade.valueAsNumber,silence=tailSilence.valueAsNumber;
+    const files=Array.from(tailFiles.files||[]),fade=tailFade.valueAsNumber,silence=tailSilence.valueAsNumber,fadeIn=tailIn.valueAsNumber;
     if(!files.length){tailStatus.textContent='音声ファイルを選択してください。';return;}
-    if(!Number.isFinite(fade)||!Number.isFinite(silence)||fade<0||fade>30||silence<0||silence>30){tailStatus.textContent='時間は0〜30秒で指定してください。';return;}
+    if(!Number.isFinite(fadeIn)||fadeIn<0||fadeIn>30||!Number.isFinite(fade)||!Number.isFinite(silence)||fade<0||fade>30||silence<0||silence>30){tailStatus.textContent='時間は0〜30秒で指定してください。';return;}
     const Ctx=window.AudioContext||window.webkitAudioContext;
     if(!Ctx){tailStatus.textContent='このブラウザは音声加工に対応していません。';return;}
     const format=tailFormat.value,bitrate=Number(tailBitrate.value),ext=format==="mp3"?".mp3":".wav";
     const names=new Set(),entries=[];
-    const controls=[tailFiles,tailFade,tailSilence,tailRun,tailFormat,tailBitrate];controls.forEach(e=>e.disabled=true);
+    const controls=[tailFiles,tailIn,tailFade,tailSilence,tailRun,tailFormat,tailBitrate];controls.forEach(e=>e.disabled=true);
     let ctx;
     try{
       ctx=new Ctx();
@@ -426,7 +434,7 @@
         try{
           const buffer=await ctx.decodeAudioData(await file.arrayBuffer());
           if(buffer.numberOfChannels>2)throw Error('モノラル・ステレオのみ対応しています。');
-          output=format==='mp3'?await encodeTailMp3(await mp3Rate(buffer),fade,silence,bitrate,lame,p=>{tailStatus.textContent=(i+1)+' / '+files.length+' MP3変換中: '+file.name+' '+p+'%';}):encodeTailWav(buffer,fade,silence);
+          output=format==='mp3'?await encodeTailMp3(await mp3Rate(buffer),fade,silence,bitrate,lame,p=>{tailStatus.textContent=(i+1)+' / '+files.length+' MP3変換中: '+file.name+' '+p+'%';},fadeIn):encodeTailWav(buffer,fade,silence,fadeIn);
         }
         catch(e){throw Error(file.name+': '+(e.message||e));}
         totalBytes+=output.size;

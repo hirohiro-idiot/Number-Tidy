@@ -78,8 +78,16 @@
     <div class="footline"><p class="notice" id="notice">※ ダウンロードはZIP形式です。ZIPを解凍すると整理済みのファイル名になります。</p><button type="button" class="btn btn-download" id="download" disabled>整理したZIPをダウンロード ↓</button></div>
     <div class="progress-wrap" id="progress-wrap" aria-live="polite"><progress max="100" value="0" id="progress"></progress><div class="progress-label" id="progress-label">準備中...</div></div>
   </section>
+<section class="panel" style="margin:20px 0" aria-label="音声末尾加工">
+<h2>音声の末尾加工</h2>
+<p class="hint">番号整理とは独立した機能です。音声をブラウザ内で加工し、元ファイルは変更しません。出力は16-bit PCM WAV（元のタグ・ジャケットは保持しません）。</p>
+<div class="field"><label class="field-label" for="tail-files">音声ファイル（複数選択可）</label><input class="control" id="tail-files" type="file" accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg,.opus,.aac" multiple></div>
+<div class="twocol"><div class="field"><label class="field-label" for="tail-fade">フェードアウト（秒）</label><input class="control" id="tail-fade" type="number" min="0" max="30" step="0.1" value="1"></div><div class="field"><label class="field-label" for="tail-silence">追加無音（秒）</label><input class="control" id="tail-silence" type="number" min="0" max="30" step="0.1" value="0.5"></div></div>
+<p class="hint">MP3等、ブラウザがデコードできるモノラル・ステレオ音声に対応。WAVは元の圧縮音声より大きくなります。</p>
+<button class="btn btn-main" id="tail-run" type="button">加工してZIPをダウンロード</button><p class="notice" id="tail-status" role="status"></p>
+</section>
 </main>
-<footer class="footer"><div class="wrap">Number Tidy · 無料 / サーバー不要 / GitHub Pages 対応　　※ ZIP内のファイルデータは再エンコードしません。</div></footer>
+<footer class="footer"><div class="wrap">Number Tidy · 無料 / サーバー不要 / GitHub Pages 対応　　※ 番号整理ではファイルデータを再エンコードしません。</div></footer>
 <script>
 'use strict';
 (() => {
@@ -318,6 +326,63 @@
       els.progressLabel.textContent=`ZIPを作成しました（${planned.length}件）。保存が始まらない場合はブラウザのダウンロード設定を確認してください。`;
     }catch(err){console.error(err);els.notice.className='notice error';els.notice.textContent='ZIP作成に失敗しました: '+(err?.message||String(err));els.progressLabel.textContent='処理を中断しました。'}
     finally{processing=false;rebuild();}
+  });
+
+  function encodeTailWav(buffer,fade,silence){
+    const rate=buffer.sampleRate, channels=buffer.numberOfChannels, n=buffer.length;
+    if(channels<1||channels>2)throw Error('モノラル・ステレオのみ対応しています。');
+    const extra=Math.round(silence*rate), frames=n+extra, bytes=frames*channels*2;
+    if(bytes>256*1024*1024)throw Error('加工後のWAVが256MiBを超えます。');
+    const out=new ArrayBuffer(44+bytes),v=new DataView(out);
+    const ascii=(offset,str)=>{for(let i=0;i<str.length;i++)v.setUint8(offset+i,str.charCodeAt(i));};
+    ascii(0,'RIFF');v.setUint32(4,36+bytes,true);ascii(8,'WAVE');ascii(12,'fmt ');
+    v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,channels,true);
+    v.setUint32(24,rate,true);v.setUint32(28,rate*channels*2,true);v.setUint16(32,channels*2,true);v.setUint16(34,16,true);
+    ascii(36,'data');v.setUint32(40,bytes,true);
+    const data=Array.from({length:channels},(_,i)=>buffer.getChannelData(i));
+    const count=Math.min(n,Math.round(fade*rate)),start=n-count;
+    for(let i=0;i<n;i++){
+      const gain=count&&i>=start?(count===1?0:0.5*(1+Math.cos(Math.PI*(i-start)/(count-1)))):1;
+      for(let c=0;c<channels;c++){
+        const x=Math.max(-1,Math.min(1,data[c][i]*gain));
+        v.setInt16(44+2*(i*channels+c),Math.round(x*(x<0?32768:32767)),true);
+      }
+    }
+    return new Blob([out],{type:'audio/wav'});
+  }
+  const tailFiles=$('tail-files'),tailFade=$('tail-fade'),tailSilence=$('tail-silence'),tailRun=$('tail-run'),tailStatus=$('tail-status');
+  tailRun.addEventListener('click',async()=>{
+    const files=Array.from(tailFiles.files||[]),fade=tailFade.valueAsNumber,silence=tailSilence.valueAsNumber;
+    if(!files.length){tailStatus.textContent='音声ファイルを選択してください。';return;}
+    if(!Number.isFinite(fade)||!Number.isFinite(silence)||fade<0||fade>30||silence<0||silence>30){tailStatus.textContent='時間は0〜30秒で指定してください。';return;}
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    if(!Ctx){tailStatus.textContent='このブラウザは音声加工に対応していません。';return;}
+    const names=new Set(),entries=[];
+    const controls=[tailFiles,tailFade,tailSilence,tailRun];controls.forEach(e=>e.disabled=true);
+    let ctx;
+    try{
+      ctx=new Ctx();
+      let totalBytes=0;
+      for(const [i,file] of files.entries()){
+        tailStatus.textContent=(i+1)+' / '+files.length+' 加工中: '+file.name;
+        await new Promise(resolve=>setTimeout(resolve,0));
+        const base=file.name.replace(/\.[^.]+$/,'')||'audio';
+        let name=base+'.wav',suffix=2;
+        while(names.has(name.normalize('NFC').toLowerCase()))name=base+' ('+(suffix++)+').wav';
+        names.add(name.normalize('NFC').toLowerCase());
+        let wav;
+        try{wav=encodeTailWav(await ctx.decodeAudioData(await file.arrayBuffer()),fade,silence);}
+        catch(e){throw Error(file.name+': '+(e.message||e));}
+        totalBytes+=wav.size;
+        if(totalBytes>512*1024*1024)throw Error('出力合計が512MiBを超えます。分割して処理してください。');
+        entries.push({file:new File([wav],name,{type:'audio/wav',lastModified:file.lastModified}),newPath:name});
+      }
+      const zip=await buildZip(entries,(p)=>{tailStatus.textContent='ZIP作成中: '+p+'%';});
+      const url=URL.createObjectURL(zip),link=document.createElement('a');
+      link.href=url;link.download='audio_tail.zip';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      tailStatus.textContent=entries.length+'件の加工が完了しました。';
+    }catch(e){tailStatus.textContent='加工失敗: '+(e.message||e);}
+    finally{if(ctx)await ctx.close().catch(()=>{});controls.forEach(e=>e.disabled=false);}
   });
   rebuild();
 })();
